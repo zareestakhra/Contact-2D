@@ -1,0 +1,26 @@
+function [v2,w,p,q,fC,uC,istate]=istate1(KC,fw,uC,fC,v,w,q,p,i,ff)
+
+w=0;
+uC(2*i,1)=w;
+
+v2=v;
+uC(2*i-1,1)=v2;
+
+fC=KC(1:2*i,1:2*i)*uC(1:2*i)+fw(1:2*i);
+
+q=fC(2*i-1,1);
+p=fC(2*i,1);
+
+deltav=v2-v;
+
+if p <= 0 
+    istate=2;
+elseif q> ff*p
+    istate=4;
+elseif q < -1*ff*p
+    istate=3;
+else
+    istate=1;
+end
+
+end

@@ -1,0 +1,74 @@
+function Solution_Algorithm(Anodes_contact_body, KC, KE)
+
+%Set the initial Values
+t=0;
+deltaT=0.1;
+T=5;
+eps0=0.01;
+
+
+Number_of_timestep=100;
+
+Timestep_counter=1;
+
+%Solving for each time step
+while t<T 
+    if t==0
+        istate=1;
+        v=0;
+        w=0;
+        p=0;
+        q=0;
+        deltav=0;
+        friction_Coefficient=0.35;
+        
+        fw= create_fw_timestep(KE, 'zero', '-constant', 1, Number_of_timestep);
+        %Defining initial uC and fC
+        [rfw,~]=size(fw);
+        uC=[0;0];
+        fC=uC;
+        eps=100;
+        NodeSetTemp.Normal_Reaction=p;
+        NodeSetTemp.Tangential_Reaction=q;
+        NodeSetTemp.Normal_Displacement=w;
+        NodeSetTemp.Tangential_Displacement=v;
+        NodeSetTemp.istateNumber=istate;
+        NodeSetTemp.ContactForceVector=fC;
+        NodeSetTemp.ContactDisplacmentVector=uC;
+    else
+         %Finding the reation values in the contact surface for each time
+        %step
+        fw= create_fw_timestep(KE, 'zero', '-constant', Timestep_counter, Number_of_timestep);
+        
+        %Solving for the current time
+        [NodeSet]=istate_Solver(Anodes_contact_body, KC, fw, uC, fC, v, w, q, p, deltav, t, friction_Coefficient, istate);
+        %Finding the epsilon for the previous tima and current time based
+        %on Eq. 16
+        if Timestep_counter~=1
+            eps= eps_Compute(Anodes_contact_body ,NodeSetTemp ,NodeSet);
+        end
+        %Extarcting values from previous time to go through current
+        %time
+        p=NodeSet.Normal_Reaction;
+        q=NodeSet.Tangential_Reaction;
+        w=NodeSet.Normal_Displacement;
+        v=NodeSet.Tangential_Displacement;
+        istate=NodeSet.istateNumber;
+        fC=NodeSet.ContactForceVector;
+        uC=NodeSet.ContactDisplacmentVector;
+    end
+    
+    %Time increasing
+    if eps<eps0 || Timestep_counter==1
+       t=t+deltaT;
+       %Saving for calculating of eps
+       NodeSet_Temp=NodeSet;
+       %Saving as afinal result for plotting
+       NodeSet_Final(Timestep_counter)=NodeSet;
+       Timestep_counter=1+Timestep_counter;
+    elseif t==0
+       t=t+deltaT; 
+    end
+end
+
+end
